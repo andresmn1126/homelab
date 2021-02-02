@@ -254,7 +254,7 @@ services:
     volumes:
       - $USERDIR/nzbget/config:/config
       - /mnt/media:/media
-      - $USERDIR/docker/data/nzbget/home:/home
+      - $USERDIR/nzbget/home:/home
     environment:
       - PUID=$PUID
       - PGID=$PGID
