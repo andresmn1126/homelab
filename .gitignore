@@ -1,0 +1,6 @@
+vars.yml
+.DS_Store
+**/.DS_Store
+galaxy_roles/
+galaxy_roles/*
+

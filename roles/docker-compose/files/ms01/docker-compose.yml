@@ -1,0 +1,369 @@
+---
+version: "3.7"
+
+networks:
+  traefik_proxy:
+    external: true     
+services:
+
+  traefik:
+    container_name: traefik
+    image: traefik:v2.4 # the chevrotin tag refers to v2.2.x
+    restart: always
+    command: # CLI arguments
+      - --global.checkNewVersion=true
+      - --global.sendAnonymousUsage=true
+      - --entryPoints.http.address=:80
+      - --entryPoints.https.address=:443
+        # Allow these IPs to set the X-Forwarded-* headers - Cloudflare IPs: https://www.cloudflare.com/ips/
+      - --entrypoints.https.forwardedHeaders.trustedIPs=173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/12,172.64.0.0/13,131.0.72.0/22
+      - --entryPoints.traefik.address=:8080
+      - --api=true
+#      - --api.insecure=true
+#      - --serversTransport.insecureSkipVerify=true
+      - --log=true
+      - --log.level=WARN # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
+      - --accessLog=true
+      - --accessLog.filePath=/etc/traefik/traefik.log
+      - --accessLog.bufferingSize=100 # Configuring a buffer of 100 lines
+      - --accessLog.filters.statusCodes=400-499
+      - --providers.docker=true
+      - --providers.docker.endpoint=unix:///var/run/docker.sock
+      - --providers.docker.defaultrule=Host(`{{ index .Labels "com.docker.compose.service" }}.$DOMAINNAME`)
+      - --providers.docker.exposedByDefault=false
+      - --providers.docker.network=traefik_proxy
+      - --providers.docker.swarmMode=false
+      - --providers.file.directory=/etc/traefik/rules # Load dynamic configuration from one or more .toml or .yml files in a directory.
+#      - --providers.file.filename=/path/to/file # Load dynamic configuration from a file.
+      - --providers.file.watch=true # Only works on top level files in the rules folder
+#      - --certificatesResolvers.dns-cloudflare.acme.caServer=https://acme-staging-v02.api.letsencrypt.org/directory # LetsEncrypt Staging Server - uncomment when testing
+      - --certificatesResolvers.dns-cloudflare.acme.email=$CLOUDFLARE_EMAIL
+      - --certificatesResolvers.dns-cloudflare.acme.storage=/etc/traefik/acme.json
+      - --certificatesResolvers.dns-cloudflare.acme.dnsChallenge.provider=cloudflare
+      - --certificatesResolvers.dns-cloudflare.acme.dnsChallenge.resolvers=1.1.1.1:53,1.0.0.1:53
+      - --certificatesResolvers.dns-cloudflare.acme.dnsChallenge.delayBeforeCheck=90 # To delay DNS check and reduce LE hitrate
+  
+    networks:
+      - traefik_proxy
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - "$USERDIR/traefik:/etc/traefik"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    environment:
+      - CF_API_EMAIL=$CLOUDFLARE_EMAIL
+      - CF_API_KEY=$CLOUDFLARE_API_KEY
+    labels:
+      - "traefik.enable=true"
+      # HTTP-to-HTTPS Redirect
+      - "traefik.http.routers.http-catchall.entrypoints=http"
+      - "traefik.http.routers.http-catchall.rule=HostRegexp(`{host:.+}`)"
+      - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      # HTTP Routers
+      - "traefik.http.routers.traefik-rtr.entrypoints=https"
+      - "traefik.http.routers.traefik-rtr.rule=Host(`traefik.$DOMAINNAME`)"
+      - "traefik.http.routers.traefik-rtr.tls=true"
+      - "traefik.http.routers.traefik-rtr.tls.certresolver=dns-cloudflare"
+      - "traefik.http.routers.traefik-rtr.tls.domains[0].main=$DOMAINNAME"
+      - "traefik.http.routers.traefik-rtr.tls.domains[0].sans=*.$DOMAINNAME"
+#      - "traefik.http.routers.traefik-rtr.tls.domains[1].main=$DOMAIN" # Pulls main cert for second domain
+#      - "traefik.http.routers.traefik-rtr.tls.domains[1].sans=*.$DOMAIN" # Pulls wildcard cert for second domain
+      ## Services - API
+      - "traefik.http.routers.traefik-rtr.service=api@internal"
+      ## Middlewares
+      - "traefik.http.routers.traefik-rtr.middlewares=chain-oauth@file"
+  oauth:
+    container_name: oauth
+    image: thomseddon/traefik-forward-auth:latest
+    restart: always
+    networks:
+      - traefik_proxy
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - CLIENT_ID=$GOOGLE_CLIENT_ID
+      - CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
+      - SECRET=$OAUTH_SECRET
+      - COOKIE_DOMAIN=$DOMAINNAME
+      - INSECURE_COOKIE=false
+      - AUTH_HOST=oauth.$DOMAINNAME
+      - URL_PATH=/_oauth
+      - WHITELIST=$MY_EMAIL
+      - LOG_LEVEL=info
+      - LOG_FORMAT=text
+      - LIFETIME=2592000 # 30 days
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.oauth-rtr.entrypoints=https"
+      - "traefik.http.routers.oauth-rtr.rule=Host(`oauth.$DOMAINNAME`)"
+      - "traefik.http.routers.oauth-rtr.tls=true"
+      ## HTTP Services
+      - "traefik.http.routers.oauth-rtr.service=oauth-svc"
+      - "traefik.http.services.oauth-svc.loadbalancer.server.port=4181"
+      ## Middlewares
+      - "traefik.http.routers.oauth-rtr.middlewares=chain-oauth@file"
+  ombi:
+    image: linuxserver/ombi:latest
+    container_name: ombi
+    restart: unless-stopped
+    networks:
+      - traefik_proxy
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - $USERDIR/ombi:/config
+    environment:
+      PUID: $PUID
+      PGID: $PGID
+      TZ: $TZ
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.ombi-rtr.entrypoints=https"
+      - "traefik.http.routers.ombi-rtr.rule=Host(`requests.$DOMAINNAME`)"
+      - "traefik.http.routers.ombi-rtr.tls=true"
+      ## Middlewares
+      - "traefik.http.routers.ombi-rtr.middlewares=chain-no-auth@file"
+      ## HTTP Services
+      - "traefik.http.routers.ombi-rtr.service=ombi-svc"
+      - "traefik.http.services.ombi-svc.loadbalancer.server.port=3579"
+
+  hydra:
+    image: linuxserver/hydra2:latest
+    container_name: hydra
+    restart: unless-stopped
+    networks:
+      - traefik_proxy
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "5076:5076"
+    volumes:
+      - $USERDIR/hydra:/config
+      - /mnt/media/downloads:/downloads
+    environment:
+      PUID: $PUID
+      PGID: $PGID
+      TZ: $TZ
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.hydra-rtr.entrypoints=https"
+      - "traefik.http.routers.hydra-rtr.rule=Host(`hydra.$DOMAINNAME`)"
+      - "traefik.http.routers.hydra-rtr.tls=true"
+#      - "traefik.http.routers.hydra-rtr.tls.certresolver=dns-cloudflare" 
+      ## Middlewares
+      - "traefik.http.routers.hydra-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.hydra-rtr.service=hydra-svc"
+      - "traefik.http.services.hydra-svc.loadbalancer.server.port=5076"
+
+  radarr:
+#    image: aront/radarr #for mp4_automator support
+    image: linuxserver/radarr:nightly
+    container_name: radarr
+    restart: unless-stopped
+    networks:
+      - traefik_proxy
+    security_opt:
+      - no-new-privileges:true
+#    ports:
+#      - "$RADARR_PORT:7878"
+    volumes:
+      - $USERDIR/radarr:/config
+      - /mnt/media:/media
+#      - $USERDIR/docker/shared/mp4_automator:/config_mp4_automator
+      - "/etc/localtime:/etc/localtime:ro"
+    environment:
+      PUID: $PUID
+      PGID: $PGID
+      TZ: $TZ
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers Auth Bypass
+      - "traefik.http.routers.radarr-rtr-bypass.entrypoints=https"
+      - "traefik.http.routers.radarr-rtr-bypass.tls=true"  
+#      - "traefik.http.routers.radarr-rtr-bypass.tls.certresolver=dns-cloudflare" 
+      - "traefik.http.routers.radarr-rtr-bypass.rule=Headers(`X-Api-Key`, `$RADARR_API_KEY`)"
+      - "traefik.http.routers.radarr-rtr-bypass.priority=100"
+      ## HTTP Routers Auth 
+      - "traefik.http.routers.radarr-rtr.entrypoints=https"
+      - "traefik.http.routers.radarr-rtr.tls=true"
+#      - "traefik.http.routers.radarr-rtr.tls.certresolver=dns-cloudflare" 
+      - "traefik.http.routers.radarr-rtr.rule=Host(`radarr.$DOMAINNAME`)"
+      - "traefik.http.routers.radarr-rtr.priority=99"
+      ## Middlewares
+      - "traefik.http.routers.radarr-rtr-bypass.middlewares=chain-no-auth@file"
+      - "traefik.http.routers.radarr-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.radarr-rtr.service=radarr-svc"
+      - "traefik.http.routers.radarr-rtr-bypass.service=radarr-svc"
+      - "traefik.http.services.radarr-svc.loadbalancer.server.port=7878"
+
+  sonarr:
+    image: linuxserver/sonarr:preview
+    container_name: sonarr
+    restart: unless-stopped
+    networks:
+      - traefik_proxy
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - $USERDIR/sonarr:/config
+      - /mnt/media:/media
+      - "/etc/localtime:/etc/localtime:ro"
+    environment:
+      PUID: $PUID
+      PGID: $PGID
+      TZ: $TZ
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers Auth Bypass
+      - "traefik.http.routers.sonarr-rtr-bypass.entrypoints=https"
+      - "traefik.http.routers.sonarr-rtr-bypass.tls=true"  
+#      - "traefik.http.routers.sonarr-rtr-bypass.tls.certresolver=dns-cloudflare" 
+      - "traefik.http.routers.sonarr-rtr-bypass.rule=Headers(`X-Api-Key`, `$SONARR_API_KEY`)"
+      - "traefik.http.routers.sonarr-rtr-bypass.priority=100"
+      ## HTTP Routers Auth 
+      - "traefik.http.routers.sonarr-rtr.entrypoints=https"
+      - "traefik.http.routers.sonarr-rtr.tls=true"
+#      - "traefik.http.routers.sonarr-rtr.tls.certresolver=dns-cloudflare" 
+      - "traefik.http.routers.sonarr-rtr.rule=Host(`sonarr.$DOMAINNAME`)"
+      - "traefik.http.routers.sonarr-rtr.priority=99"
+      ## Middlewares
+      - "traefik.http.routers.sonarr-rtr-bypass.middlewares=chain-no-auth@file"
+      - "traefik.http.routers.sonarr-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.sonarr-rtr.service=sonarr-svc"
+      - "traefik.http.routers.sonarr-rtr-bypass.service=sonarr-svc"
+      - "traefik.http.services.sonarr-svc.loadbalancer.server.port=8989"
+
+  nzbget:
+    container_name: nzbget
+    image: linuxserver/nzbget:latest
+    restart: unless-stopped
+    networks:
+      traefik_proxy:
+    ports:
+      - "6789:6789"
+    volumes:
+      - $USERDIR/nzbget/config:/config
+      - /mnt/media:/media
+      - $USERDIR/docker/data/nzbget/home:/home
+    environment:
+      - PUID=$PUID
+      - PGID=$PGID
+      - TZ=$TZ
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.nzbget-rtr.entrypoints=https"
+      - "traefik.http.routers.nzbget-rtr.rule=Host(`nzbget.$DOMAINNAME`)"
+      - "traefik.http.routers.nzbget-rtr.tls=true"
+      - "traefik.http.routers.nzbget-rtr.tls.certresolver=dns-cloudflare"
+      ## Middlewares
+      - "traefik.http.routers.nzbget-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.nzbget-rtr.service=nzbget-svc"
+      - "traefik.http.services.nzbget-svc.loadbalancer.server.port=6789"
+
+  handbrake:
+    image: jlesage/handbrake:latest
+    container_name: handbrake
+    restart: unless-stopped
+    networks:
+      - traefik_proxy
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - $USERDIR/handbrake:/config:rw
+      - /mnt/media/handbrake/watch:/watch:rw
+      - /mnt/media/handbrake/output:/output:rw
+      - /mnt/media/movies:/movies:rw
+    environment:
+      USER_ID: $PUID
+      GROUP_ID: $PGID
+      UMASK: 000
+      TZ: $TZ
+      KEEP_APP_RUNNING: 1
+      DISPLAY_WIDTH: 1600
+      DISPLAY_HEIGHT: 768
+      AUTOMATED_CONVERSION_PRESET: Personal/H264 Audio Passthrough
+      AUTOMATED_CONVERSION_FORMAT: mkv
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.handbrake-rtr.entrypoints=https"
+      - "traefik.http.routers.handbrake-rtr.rule=Host(`handbrake.$DOMAINNAME`)"
+      - "traefik.http.routers.handbrake-rtr.tls=true"
+#      - "traefik.http.routers.handbrake-rtr.tls.certresolver=dns-cloudflare" 
+      ## Middlewares
+      - "traefik.http.routers.handbrake-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.handbrake-rtr.service=handbrake-svc"
+      - "traefik.http.services.handbrake-svc.loadbalancer.server.port=5800"
+
+  makemkv:
+    container_name: makemkv
+    image: jlesage/makemkv:latest
+    restart: always
+    networks:
+      - traefik_proxy
+    volumes:
+      - $USERDIR/makemkv/config:/config:rw
+      - /mnt/media:/storage # Data folder - can be anything
+    environment:
+      - USER_ID=$PUID
+      - GROUP_ID=$PGID
+      - TZ=$TZ
+      - UMASK=000
+      - DISPLAY_WIDTH=1600
+      - DISPLAY_HEIGHT=768
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.makemkv-rtr.entrypoints=https"
+      - "traefik.http.routers.makemkv-rtr.rule=Host(`makemkv.$DOMAINNAME`)"
+      - "traefik.http.routers.makemkv-rtr.tls=true"
+#      - "traefik.http.routers.makemkv-rtr.tls.certresolver=dns-cloudflare"
+      ## Middlewares
+      - "traefik.http.routers.makemkv-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.makemkv-rtr.service=makemkv-svc"
+      - "traefik.http.services.makemkv-svc.loadbalancer.server.port=5800"
+
+  mkvtoolnix:
+    container_name: mkvtoolnix
+    image: jlesage/mkvtoolnix:latest
+    restart: always
+    networks:
+      - traefik_proxy
+    volumes:
+      - $USERDIR/mkvtoolnix:/config:rw
+      - /mnt/media:/storage:rw # Data folder - can be anything
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - USER_ID=$PUID
+      - GROUP_ID=$PGID
+      - TZ=$TZ
+      - UMASK=002
+      - DISPLAY_WIDTH=1600
+      - DISPLAY_HEIGHT=768
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.mkvtoolnix-rtr.entrypoints=https"
+      - "traefik.http.routers.mkvtoolnix-rtr.rule=Host(`mkvtoolnix.$DOMAINNAME`)"
+      - "traefik.http.routers.mkvtoolnix-rtr.tls=true"
+#      - "traefik.http.routers.mkvtoolnix-rtr.tls.certresolver=dns-cloudflare"
+      ## Middlewares
+      - "traefik.http.routers.mkvtoolnix-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.mkvtoolnix-rtr.service=mkvtoolnix-svc"
+      - "traefik.http.services.mkvtoolnix-svc.loadbalancer.server.port=5800"

@@ -1,0 +1,25 @@
+[http.routers]
+  [http.routers.tautulli-rtr]
+      entryPoints = ["https"]
+      rule = "Host(`plexstats.{{ public_domain }}`)"
+      service = "tautulli-svc"
+      priority = 99
+      middlewares = ["chain-oauth"]
+      [http.routers.tautulli-rtr.tls]
+        certresolver = "dns-cloudflare"
+
+  [http.routers.tautulli-rtr-bypass]
+      entryPoints = ["https"]
+      rule = "Host(`plexstats.{{ public_domain }}`) && PathPrefix(`/api`)"
+      service = "tautulli-svc"
+      priority = 100
+      middlewares = ["chain-no-auth"]
+      [http.routers.tautulli-rtr-bypass.tls]
+        certresolver = "dns-cloudflare"
+
+[http.services]
+  [http.services.tautulli-svc]
+    [http.services.tautulli-svc.loadBalancer]
+      passHostHeader = true
+      [[http.services.tautulli-svc.loadBalancer.servers]]
+        url = "http://{{ hostvars['plex']['ansible_default_ipv4']['address'] }}:8181"

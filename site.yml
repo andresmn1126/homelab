@@ -1,0 +1,39 @@
+- hosts: all
+  become: true
+  tasks:
+
+  - name: Update Debian servers
+    apt:
+      update_cache: yes
+      upgrade: dist
+    when: ansible_distribution in ["Debian", "Ubuntu"]
+
+  - name: Update CentOS servers
+    dnf:
+      update_cache: yes
+      name: "*"
+      state: latest
+    when: ansible_distribution == "CentOS"
+
+
+- hosts: plex
+  become: true
+  roles:
+    - plex
+
+- hosts: proxmox    
+  become: true
+  vars_files:
+    - "vars/vault.yml"
+  roles:
+    - postfix
+
+- hosts: ms01
+  become: true
+  vars_files:
+    - "vars/vault.yml"
+  roles:
+    - role: geerlingguy.docker
+      tags: [ docker ]
+    - role: docker-compose
+      tags: [ compose, docker]

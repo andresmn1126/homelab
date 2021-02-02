@@ -1,0 +1,7 @@
+---
+- name: Setup Traefik directories and rules
+  include: traefik.yml
+  when: traefik_required | bool
+
+- name: Copy docker-compose file and create containers
+  include: docker-services.yml  

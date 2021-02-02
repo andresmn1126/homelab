@@ -1,0 +1,32 @@
+---
+- name: Install authentication packages
+  apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: yes
+  loop: "{{ mail_packages }}"
+
+- name: Create authentication file
+  template:
+    src: ./etc/postfix/sasl_passwd.j2
+    dest: /etc/postfix/sasl_passwd
+    owner: root
+    group: root
+    mode: 0600
+  notify: create postmap hash
+
+- name: Replace postfix config file
+  template:
+   src: ./etc/postfix/main.j2
+   dest: /etc/postfix/main.cf
+   owner: root
+   group: root
+   mode: 0644
+   force: yes    
+  notify: restart postfix
+
+- name: Ensure postfix is enabled and started
+  service:
+    name: postfix
+    enabled: yes
+    state: started  

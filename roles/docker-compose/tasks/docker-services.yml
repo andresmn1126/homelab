@@ -1,0 +1,30 @@
+- name: Ensure docker-compose directory is created
+  file:
+    path: "{{ compose_path }}"
+    state: directory
+    owner: "{{ main_uid }}"
+    group: "{{ main_gid }}"
+    mode: 0772
+
+- name: Copy docker-compose file to host
+  copy:
+    src: "{{ ansible_hostname }}/docker-compose.yml"
+    dest: "{{ compose_path }}/docker-compose.yml"
+    owner: "{{ main_uid }}"
+    group: "{{ main_gid }}"
+    mode: 0660
+
+- name: Copy .env template file to host
+  template:
+    src: "{{ ansible_hostname }}/.env.j2"
+    dest: "{{ compose_path }}/.env"
+    owner: "{{ main_uid }}"
+    group: "{{ main_gid }}"
+    mode: 0660
+    
+- name: Create containers based on docker-compose template
+  community.general.docker_compose:
+    pull: yes
+    recreate: smart
+    remove_orphans: yes
+    project_src: "{{ compose_path }}"

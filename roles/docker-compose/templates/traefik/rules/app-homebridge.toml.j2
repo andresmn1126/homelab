@@ -1,0 +1,15 @@
+[http.routers]
+  [http.routers.hb-rtr]
+      entryPoints = ["https"]
+      rule = "Host(`hb.{{ public_domain }}`)"
+      service = "hb-svc"
+      middlewares = ["chain-oauth"]
+      [http.routers.hb-rtr.tls]
+        certresolver = "dns-cloudflare"
+
+[http.services]
+  [http.services.hb-svc]
+    [http.services.hb-svc.loadBalancer]
+      passHostHeader = true
+      [[http.services.hb-svc.loadBalancer.servers]]
+        url = "http://{{ hostvars['hb01']['ansible_default_ipv4']['address'] }}:8581"

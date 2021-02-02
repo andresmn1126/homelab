@@ -1,0 +1,15 @@
+[http.routers]
+  [http.routers.plex-rtr]
+      entryPoints = ["https"]
+      rule = "Host(`movies.{{ public_domain }}`)"
+      service = "plex-svc"
+      middlewares = ["chain-no-auth"]
+      [http.routers.plex-rtr.tls]
+        certresolver = "dns-cloudflare"
+
+[http.services]
+  [http.services.plex-svc]
+    [http.services.plex-svc.loadBalancer]
+      passHostHeader = true
+      [[http.services.plex-svc.loadBalancer.servers]]
+        url = "http://{{ hostvars['plex']['ansible_default_ipv4']['address'] }}:32400"

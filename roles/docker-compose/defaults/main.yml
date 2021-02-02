@@ -1,0 +1,6 @@
+---
+appdata_path: "/opt/appdata"
+compose_path: "/home/{{ main_user }}/docker"
+main_uid: "1000"
+main_gid: "{{ main_uid }}"
+traefik_required: false

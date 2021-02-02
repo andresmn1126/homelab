@@ -1,0 +1,6 @@
+postfix_config_file: /etc/postfix/main.cf
+postfix_pass_file: /etc/postfix/sasl_passwd
+mail_packages:
+  - libsasl2-modules
+smtp_server: smtp.gmail.com
+smtp_port: 587

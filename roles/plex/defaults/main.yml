@@ -1,0 +1,2 @@
+plex_repo: deb https://downloads.plex.tv/repo/deb public main
+plex_key_url: https://downloads.plex.tv/plex-keys/PlexSign.key

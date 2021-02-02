@@ -1,0 +1,24 @@
+[proxmox]
+hv01 ansible_host=10.1.10.3
+
+[pihole_servers]
+ph01 ansible_host=10.1.10.5
+ph02 ansible_host=10.1.10.6
+
+[plex_servers]
+plex ansible_host=10.1.10.17
+
+[unifi_servers]
+unifi ansible_host=10.1.10.12
+
+[file_servers]
+fs01 ansible_host=10.1.10.21
+
+[media_servers]
+ms01 ansible_host=10.1.10.15
+
+[ipa_server]
+ipa01 ansible_host=10.1.10.4
+
+[homebridge_servers]
+hb01 ansible_host=10.1.10.8

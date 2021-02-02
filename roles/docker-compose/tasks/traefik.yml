@@ -1,0 +1,26 @@
+---
+- name: Ensure Traefik rules directory is created
+  file:
+    path: "{{ appdata_path }}/traefik/rules"
+    state: directory
+    recurse: yes
+    owner: "{{ main_uid }}"
+    group: "{{ main_gid }}"
+    mode: 0772  
+
+- name: Copy Traefik rule files
+  template:
+    src: "{{ item }}"
+    dest: "{{ appdata_path }}/traefik/rules/{{ item | basename | regex_replace('.j2','') }}"
+    owner: "{{ main_uid }}"
+    group: "{{ main_gid }}"
+    mode: 0662
+  with_fileglob: 
+    - "../templates/traefik/rules/*.j2"
+
+- name: Ensure traefik_proxy network is created
+  community.general.docker_network:
+    name: traefik_proxy
+    state: present
+          
+    

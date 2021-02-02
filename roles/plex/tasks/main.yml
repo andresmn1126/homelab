@@ -1,0 +1,24 @@
+- name: Add repository signing key
+  apt_key:
+    url: "{{ plex_key_url }}"
+    state: present
+
+- name: Add Plex official repository
+  apt_repository:
+    repo: "{{ plex_repo }}"
+    state: present
+    filename: plex
+
+- name: Install or Update Plex Media Server
+  apt:
+    name: plexmediaserver
+    state: latest
+    update_cache: yes
+  notify: restart plex
+
+- name: Ensure Plex is enabled and started
+  service:
+    name: plexmediaserver
+    state: started
+    enabled: true
+  
