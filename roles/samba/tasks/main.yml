@@ -1,0 +1,7 @@
+---
+- name: install samba
+  include: install_samba.yml
+
+- name: install avahi
+  include: install_avahi.yml
+  when: time_machine == 'true'  
