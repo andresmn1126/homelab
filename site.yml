@@ -1,5 +1,6 @@
 - hosts: all
   become: true
+  tags: [ update ]
   tasks:
 
   - name: Update Debian servers
