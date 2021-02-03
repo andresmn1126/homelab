@@ -1,0 +1,15 @@
+---
+smb_packages:
+  - samba
+  - samba-common
+  - python-glade2
+  - system-config-samba
+
+smb_daemon: "smbd"
+
+avahi_packages:
+  - avahi-daemon
+  - avahi-discover
+  - libnss-mdns
+
+avahi_service: "avahi-daemon"

@@ -1,0 +1,32 @@
+---
+- name: Inlcude distro specific variables
+  include_vars: "{{ ansible_os_family }}.yml"
+
+- name: Instal avahi packages
+  apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: true
+  loop: "{{ avahi_packages }}"
+  when: ansible_os_family == 'Debian'
+
+- name: Install avahi packages
+  dnf:
+    name: "{{ item }}"
+    state: present
+    update_cache: true
+  loop: "{{ avahi_packages }}"
+  when: ansible_os_family == 'RedHat'
+
+- name: Ensure avahi daemon is started and enabled
+  service:
+    name: "{{ avahi_service }}"
+    state: started
+    enabled: true
+
+- name: Copy time-machine service file
+  file:
+    src: "{{ ansible_hostname }}/{{ time_machine_service_dir }}/timemachine.service"
+    dest: "{{ time_machine_service_dir }}/timemachine.service"
+    mode: 0644
+  notify: restart avahi daemon      

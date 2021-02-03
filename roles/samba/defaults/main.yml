@@ -1,0 +1,4 @@
+---
+smb_conf_dir: "/etc/samba"
+time_machine_service_dir: "/etc/avahi/services"
+time_machine: false

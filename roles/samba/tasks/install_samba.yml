@@ -1,0 +1,34 @@
+---
+## Credit to geerlingguy's samba role, modified for personal use
+- name: Include distro specific variables
+  include_vars: "{{ ansible_os_family }}.yml"
+
+- name: Install samba package
+  apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: true
+  loop: "{{ smb_packages }}"
+  when: ansible_os_family == 'Debian'
+
+- name: Install samba samba packages
+  dnf:
+    name: "{{ item }}"
+    state: present
+    update_cache: true
+  loop: "{{ smb_packages }}"
+  when: ansible_os_family == 'RedHat'
+
+- name:  Ensure samba service is started and enabled
+  service:
+    name: "{{ smb_service }}"
+    state: started
+    enabled: true
+
+- name: Copy smb.conf file from template
+  template:
+    src: "{{ ansible_hostname }}/{{ smb_conf_dir }}/smb.conf.j2"
+    dest: "{{ smb_conf_dir }}/smb.conf"
+    mode: 0644
+    validate: 'testparm -s %s'
+  notify: restart samba daemon

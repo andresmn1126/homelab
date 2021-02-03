@@ -1,0 +1,13 @@
+---
+smb_packages:
+  - samba
+  - samba-client
+  - samba-common
+  - cifs-utils
+
+smb_daemon: "smb"  
+
+avahi_packages:
+  - avahi
+
+avahi_service: "avahi-daemon"

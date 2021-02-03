@@ -37,3 +37,9 @@
       tags: [ docker ]
     - role: docker-compose
       tags: [ compose, docker]
+
+- hosts: file_servers
+  become: true
+  roles:
+    - samba
+  tags: [ samba ]      

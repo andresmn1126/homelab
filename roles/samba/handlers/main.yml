@@ -1,0 +1,10 @@
+---
+- name: restart samba daemon
+  service:
+    name: "{{ smb_service }}"
+    state: restarted
+
+- name: restart avahi daemon
+  service:
+    name: "{{ avahi_service }}"
+    state: restarted    

@@ -1,0 +1,44 @@
+[global]
+
+   workgroup = WORKGROUP
+   netbios name = {{ ansible_hostname }}
+   server role = standalone server
+   min protocol = SMB2
+   security = user
+   unix extensions = yes
+   vfs objects = catia fruit streams_xattr
+   fruit:metadata = stream
+   fruit:model = MacSamba
+   fruit:posix_rename = yes
+   fruit:veto_appledouble = no
+   fruit:wipe_intentionally_left_blank_rfork = yes
+   fruit:delete_empty_adfiles = yes
+
+
+
+#======================= Share Definitions =======================
+
+[Personal Drive]
+
+   path = /mnt/user/%U
+   valid users = @shares
+   writable = yes
+   browseable = yes
+   read only = no
+
+[Media]
+
+   path = /mnt/media
+   valid users = @media
+   writable = yes
+   browseable = yes
+   read only = no 
+
+[Time Machine]
+
+   path = /mnt/timemachine
+   valid users = @time_machine
+   writable = yes
+   read only = no
+   vfs objects = catia fruit streams_xattr
+   fruit:time machine = yes
