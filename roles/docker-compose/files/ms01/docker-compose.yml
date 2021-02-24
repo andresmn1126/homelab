@@ -134,7 +134,7 @@ services:
       - "traefik.http.services.ombi-svc.loadbalancer.server.port=3579"
 
   hydra:
-    image: linuxserver/nzbhydra2ansibl:latest
+    image: linuxserver/nzbhydra2:latest
     container_name: hydra
     restart: unless-stopped
     networks:

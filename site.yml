@@ -37,10 +37,12 @@
     - role: geerlingguy.docker
       tags: [ docker ]
     - role: docker-compose
-      tags: [ compose, docker]
+      tags: [ compose, docker, update ]
 
 - hosts: file_servers
   become: true
   roles:
     - samba
-  tags: [ samba ]      
+  tags: [ samba ]
+
+          
