@@ -1,4 +1,17 @@
 ---
+- name: Ensure pip is installed
+  package:
+    name: python3-pip
+    state: present
+
+- name: Ensure python docker libary is installed
+  pip:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - docker
+    - docker-compose  
+
 - name: Setup Traefik directories and rules
   include: traefik.yml
   when: traefik_required | bool
