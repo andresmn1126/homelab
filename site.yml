@@ -16,6 +16,13 @@
       state: latest
     when: ansible_distribution == "CentOS"
 
+- hosts: all
+  become: true
+  vars_files:
+    - "vars/vault.yml"
+  roles:
+    - ryandaniels.create_users
+  tags: user  
 
 - hosts: plex
   become: true

@@ -1,0 +1,22 @@
+- hosts: all
+  become: true
+  tasks:
+
+  - name: Create ansible user account
+    user:
+      name: ansible
+      group: sudo
+      uid: 990
+      state: present
+
+  - name: Add ansible ssh key
+    authorized_key:
+      user: ansible
+      state: present
+      key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/ansible.pub') }}"  
+
+  - name: Create sudoers file for ansible user
+    copy:
+      content: 'ansible ALL=(ALL:ALL) NOPASSWD:ALL'
+      dest: /etc/sudoers.d/ansible
+      mode: 0440       

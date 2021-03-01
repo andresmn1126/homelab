@@ -1,6 +1,7 @@
 ---
 roles:
   - name: geerlingguy.docker
+  - name: ryandaniels.create_users
 
 collections:
   - name: community.general
