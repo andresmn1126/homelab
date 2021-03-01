@@ -3,4 +3,8 @@ vars.yml
 **/.DS_Store
 galaxy_roles/
 galaxy_roles/*
+.terraform
+.terraform*
+*.tfvars
+*tfstate*
 
