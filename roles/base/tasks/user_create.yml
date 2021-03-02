@@ -1,0 +1,29 @@
+---
+- name: Create users
+  ansible.builtin.user:
+    name: "{{ item.username }}"
+    uid: "{{ main_uid }}"
+    comment: "{{ item.name }}"
+    shell: "{{ item.shell }}"
+    groups: "{{ item.groups }}"
+    append: true
+    state: "{{ item.user_state }}"
+    update_password: always
+    password: "{{ item.password }}"
+  loop: "{{ users }}"
+
+- name: Add ssh keys
+  ansible.posix.authorized_key:
+    user: "{{ item.0.username }}"
+    key: "{{ item.1 }}"
+  with_subelements:
+    - "{{ users }}"
+    - ssh_key
+
+- name: Add users to sudoers.d dir
+  copy:
+    content: "{{ item.username }} ALL=(ALL) {{ 'NOPASSWD:' if ( item.use_sudo_nopass|d(false) )  else '' }}ALL"
+    dest: "/etc/sudoers.d/{{ item.username }}"
+    mode: 0440       
+  when: item.use_sudo == true
+  loop: "{{ users }}"

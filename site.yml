@@ -21,8 +21,8 @@
   vars_files:
     - "vars/vault.yml"
   roles:
-    - ryandaniels.create_users
-  tags: user  
+    - base
+  tags: [base]
 
 - hosts: plex
   become: true
