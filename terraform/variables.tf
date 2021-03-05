@@ -1,5 +1,7 @@
-locals {
-    vm = {
+variable "virtual_machines" {
+    description = "Map of Virtual Machines to be created"
+    type        = map(any)
+    default     = {
         "ms01" = {
             name = "ms01"
             clone = "ubuntu-2004-cloudinit=template"

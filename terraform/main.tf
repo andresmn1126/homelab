@@ -1,5 +1,7 @@
 resource "proxmox_vm_qemu" "vms" {
-    for_each = local.vm
+
+    for_each = var.virtual_machines
+
     name = each.value.name
     target_node = "hv01"
     clone = "ubuntu-2004-cloudinit-template" 
