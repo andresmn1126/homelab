@@ -1,11 +1,19 @@
 ---
+- name: Ensure user groups are created
+  ansible.builtin.group:
+    name: "{{ item.1 }}"
+    state: present
+  with_subelements:
+    - "{{ users }}"
+    - groups
+
 - name: Create users
   ansible.builtin.user:
     name: "{{ item.username }}"
     uid: "{{ main_uid }}"
     comment: "{{ item.name }}"
     shell: "{{ item.shell }}"
-    groups: "{{ item.groups }}"
+    groups: "{{ item.groups|join(',') }}"
     append: true
     state: "{{ item.user_state }}"
     update_password: always

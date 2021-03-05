@@ -6,11 +6,12 @@ resource "proxmox_vm_qemu" "vms" {
     agent = 1
     os_type = "cloud-init"
     cores = each.value.cores
+    cpu = "host"
     memory = each.value.memory
     scsihw = "virtio-scsi-pci"
     disk {
         size = each.value.disk
-        type = "virtio"
+        type = "scsi"
         storage = "local-zfs"
     }
     

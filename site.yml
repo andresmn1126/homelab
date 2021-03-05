@@ -46,7 +46,7 @@
     - role: docker-compose
       tags: [ compose, docker, update ]
 
-- hosts: file_servers
+- hosts: file
   become: true
   roles:
     - samba
