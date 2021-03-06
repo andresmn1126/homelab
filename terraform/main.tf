@@ -6,6 +6,7 @@ resource "proxmox_vm_qemu" "vms" {
     target_node = "hv01"
     clone = "ubuntu-2004-cloudinit-template" 
     agent = 1
+    balloon = 1
     os_type = "cloud-init"
     cores = each.value.cores
     cpu = "host"
