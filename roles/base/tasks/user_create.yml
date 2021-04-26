@@ -2,7 +2,7 @@
 - name: Ensure user groups are created
   ansible.builtin.group:
     name: "{{ item.1 }}"
-    state: present
+    state: absent
   with_subelements:
     - "{{ users }}"
     - groups
@@ -24,6 +24,7 @@
   ansible.posix.authorized_key:
     user: "{{ item.0.username }}"
     key: "{{ item.1 }}"
+    state: absent
   with_subelements:
     - "{{ users }}"
     - ssh_key
@@ -32,6 +33,7 @@
   copy:
     content: "{{ item.username }} ALL=(ALL) {{ 'NOPASSWD:' if ( item.use_sudo_nopass|d(false) )  else '' }}ALL"
     dest: "/etc/sudoers.d/{{ item.username }}"
-    mode: 0440       
+    mode: 0440  
+    state: absent     
   when: item.use_sudo == true
   loop: "{{ users }}"
