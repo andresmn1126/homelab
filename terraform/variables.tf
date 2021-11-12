@@ -11,6 +11,15 @@ variable "virtual_machines" {
             disk = "60G"
             ip = "10.1.10.15"
         }
+        "dev_box" = {
+            name = "dev-box"
+            clone = "ubuntu-2004-cloudinit=template"
+            full_clone = true
+            memory = 8192
+            cores = 4
+            disk = "80G"
+            ip = "10.1.10.22"
+        }
     }
 }
 variable "pm_api_url" {
