@@ -38,5 +38,5 @@ variable "dns_domain" {
 }
  variable "dns_ip" {
      type = string
-     default = "10.1.10.20"
+     default = "10.1.10.5"
  }
