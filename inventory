@@ -32,3 +32,4 @@ unifi ansible_host=10.1.10.12
 fs01 ansible_host=10.1.10.21
 ms01 ansible_host=10.1.10.15
 hb01 ansible_host=10.1.10.8
+dev-box ansible_host=10.1.10.22
