@@ -1,11 +1,10 @@
 ---
 - name: Ensure user groups are created
   ansible.builtin.group:
-    name: "{{ item.1 }}"
-    state: absent
-  with_subelements:
-    - "{{ users }}"
-    - groups
+    name: "{{ item.name }}"
+    gid: "{{ item.gid }}"
+    state: present
+  loop: "{{ general_groups }}"
 
 - name: Create users
   ansible.builtin.user:
@@ -17,14 +16,14 @@
     append: true
     state: "{{ item.user_state }}"
     update_password: always
-    password: "{{ item.password }}"
+    password: "{{ item.password | password_hash('sha512') }}"
   loop: "{{ users }}"
 
 - name: Add ssh keys
   ansible.posix.authorized_key:
     user: "{{ item.0.username }}"
     key: "{{ item.1 }}"
-    state: absent
+    state: "{{ item.0.user_state }}"
   with_subelements:
     - "{{ users }}"
     - ssh_key
@@ -33,7 +32,6 @@
   copy:
     content: "{{ item.username }} ALL=(ALL) {{ 'NOPASSWD:' if ( item.use_sudo_nopass|d(false) )  else '' }}ALL"
     dest: "/etc/sudoers.d/{{ item.username }}"
-    mode: 0440  
-    state: absent     
+    mode: 0440    
   when: item.use_sudo == true
   loop: "{{ users }}"

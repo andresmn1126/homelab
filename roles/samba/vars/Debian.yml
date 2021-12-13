@@ -3,9 +3,8 @@ smb_packages:
   - samba
   - samba-common
   - python-glade2
-  - system-config-samba
 
-smb_daemon: "smbd"
+smb_service: "smbd"
 
 avahi_packages:
   - avahi-daemon

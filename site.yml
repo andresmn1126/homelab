@@ -16,13 +16,13 @@
       state: latest
     when: ansible_distribution == "CentOS"
 
-#- hosts: all
-#  become: true
-#  vars_files:
-#    - "vars/vault.yml"
-#  roles:
-#    - base
-#  tags: [base]
+- hosts: all
+  become: true
+  vars_files:
+    - "vars/vault.yml"
+  roles:
+    - base
+  tags: [base]
 
 - hosts: plex
   become: true

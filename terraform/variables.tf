@@ -7,7 +7,7 @@ variable "virtual_machines" {
             clone = "ubuntu-2004-cloudinit=template"
             full_clone =  true
             memory = 8192
-            cores = 8
+            cores = 6
             disk = "60G"
             ip = "10.1.10.15"
         }
