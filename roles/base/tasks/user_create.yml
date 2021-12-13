@@ -9,10 +9,10 @@
 - name: Create users
   ansible.builtin.user:
     name: "{{ item.username }}"
-    uid: "{{ main_uid }}"
+    uid: "{{ item.uid }}"
     comment: "{{ item.name }}"
     shell: "{{ item.shell }}"
-    groups: "{{ item.groups|join(',') }}"
+    groups: "{{ item.groups| join(',') }}"
     append: true
     state: "{{ item.user_state }}"
     update_password: always
@@ -21,12 +21,11 @@
 
 - name: Add ssh keys
   ansible.posix.authorized_key:
-    user: "{{ item.0.username }}"
-    key: "{{ item.1 }}"
-    state: "{{ item.0.user_state }}"
-  with_subelements:
-    - "{{ users }}"
-    - ssh_key
+    user: "{{ item.username }}"
+    key: "{{ item.ssh_key | list | join('\n') }}"
+    state: "{{ item.user_state }}"
+  loop: "{{ users }}"
+  when: "{{ item.ssh_key is defined }}"
 
 - name: Add users to sudoers.d dir
   copy:
