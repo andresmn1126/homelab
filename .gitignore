@@ -7,4 +7,5 @@ galaxy_roles/*
 .terraform*
 *.tfvars
 *tfstate*
-
+*.tfplan
+*/*.tfplan
