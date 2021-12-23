@@ -17,3 +17,10 @@ docker_env:
   URL_PATH: "{{ oauth_url_path }}"
   RADARR_API_KEY: "{{ radarr_api_key }}"
   SONARR_API_KEY: "{{ sonarr_api_key }}"
+
+mount:
+  path: /mnt/media
+  fstype: nfs
+  src: "{{ hostvars['fs01']['ansible_default_ipv4']['address'] }}:/mnt/media"
+
+   

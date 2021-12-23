@@ -38,6 +38,7 @@
 
 - hosts: ms01
   become: true
+  tags: [ media ]
   vars_files:
     - "vars/vault.yml"
   roles:
@@ -45,6 +46,8 @@
       tags: [ docker ]
     - role: docker-compose
       tags: [ compose, docker, update ]
+    - role: mounts
+      tags: [ mounts ]
 
 - hosts: file
   become: true

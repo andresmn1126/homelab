@@ -1,0 +1,10 @@
+- name: Include OS specific vars.
+  include_vars:
+    file: "{{ ansible_os_family }}.yml"
+
+- name: Install NFS client packages if needed.
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ packages }}"
+    

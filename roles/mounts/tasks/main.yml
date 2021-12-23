@@ -1,0 +1,20 @@
+- name: Install NFS packaged if needed.
+  include: install_nfs.yml
+  when: "{{ mount.fstype == 'nfs' }}"
+
+- name: Create mount path directory.
+  ansible.builtin.file:
+    path: "{{ mount.path }}"
+    owner: "{{ main_uid }}"
+    group: "{{ main_uid }}"
+    state: directory
+    mode: 770
+
+- name: Mount filesystem.
+  ansible.posix.mount:
+    path: "{{ mount.path }}"
+    state: mounted
+    fstype: "{{ mount.fstype }}"
+    src: "{{ mount.src }}"
+    boot: True
+

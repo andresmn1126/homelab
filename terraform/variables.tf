@@ -7,14 +7,14 @@ variable "virtual_machines" {
             clone = "ubuntu-20.04-cloudimg"
             full_clone =  true
             memory = 8192
-            cores = 6
+            cores = 8
             disk = "60G"
             ip = "10.1.10.15"
             agent = 1
         }
         "dev_box" = {
             name = "dev-box"
-            clone = "ubuntu-2004-cloudinit=template"
+            clone = "ubuntu-2004-cloudinit-template"
             full_clone = true
             memory = 8192
             cores = 4
@@ -24,7 +24,7 @@ variable "virtual_machines" {
         }
         "awx" = {
             name = "awx"
-            clone = "ubuntu-2004-cloudinit=template"
+            clone = "ubuntu-2004-cloudinit-template"
             full_clone = true
             memory = 8192
             cores = 4

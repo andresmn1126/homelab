@@ -15,7 +15,7 @@
     mode: 0660
     
 - name: Create containers based on docker-compose template
-  community.general.docker_compose:
+  community.docker.docker_compose:
     pull: yes
     recreate: smart
     remove_orphans: yes

@@ -18,7 +18,7 @@
     - "../templates/traefik/rules/*.j2"
 
 - name: Ensure traefik_proxy network is created
-  community.general.docker_network:
+  community.docker.docker_network:
     name: traefik_proxy
     state: present
           
