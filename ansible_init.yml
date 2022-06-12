@@ -13,7 +13,8 @@
     authorized_key:
       user: ansible
       state: present
-      key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/ansible.pub') }}"  
+     # key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/ansible.pub') }}"
+      key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKprg2uox/DhJ56FmRUUU5kH+vo4A4+5Gcx6kFbOBDvK ansible"
 
   - name: Create sudoers file for ansible user
     copy:
